@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.turquoise-background {
+    @apply bg-turquoise-500;
+    @apply bg-gradient-to-bl;
+    @apply from-gray-700/50;
+}
+
+.asset-manager-item-selected {
+    @apply border; 
+    @apply border-turquoise-500; 
+    @apply rounded;
+    @apply bg-turquoise-50;
+}
+.timeline-element-selected {
+    border-color: white;
+}
