@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Graflow\Types\Element;
 use App\Models\Project;
 use App\Services\ProjectService;
 use Illuminate\Http\Request;
@@ -11,8 +10,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
-use App\Graflow\Types\Layer;
-use App\Graflow\Types\Vec3;
 
 //TODO create separate controllers for some of this functions;
 //TODO move types to types file;
@@ -81,5 +78,9 @@ class ProjectController extends Controller
         $projFile = Storage::disk('local')->get($this->projectService->FilePath($project));
         return $projFile;
     }
-    
+
+    public function Test(Request $request)
+    {
+
+    }
 }

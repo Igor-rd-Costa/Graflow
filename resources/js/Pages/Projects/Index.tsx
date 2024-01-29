@@ -3,7 +3,7 @@ import PrimaryButton from "@/Components/PrimaryButton";
 import CreateProjectFrom from "@/Components/Projects/CreateProjectFrom";
 import ProjectCard from "@/Components/Projects/ProjectCard";
 import Authenticated from "@/Layouts/AuthenticatedLayout";
-import { User } from "@/types";
+import { User } from "@/Types";
 import { Head } from "@inertiajs/react";
 import { useState } from "react";
 

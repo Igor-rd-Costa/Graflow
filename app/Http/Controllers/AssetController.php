@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Graflow\Types\AssetFile;
 use App\Graflow\Types\AssetFolder;
+use App\Graflow\Types\ProjectFile;
 use App\Models\Project;
 use App\Services\ProjectService;
 use Illuminate\Http\Request;

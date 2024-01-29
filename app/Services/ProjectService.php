@@ -3,14 +3,13 @@
 namespace App\Services;
 
 use App\Models\Project;
-use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ProjectService
 {    
     private string $projFileVersion = '0.0.1';
-    private const PROJ_EXTENSION = ".gfproj";
+    private const PROJ_EXT = ".gfproj";
 
     public function CreateProject(Project $project)
     {
@@ -32,7 +31,7 @@ class ProjectService
 
     public function FilePath(Project $project)
     {
-        return $this->FolderPath($project).$project->file_name.ProjectService::PROJ_EXTENSION;
+        return $this->FolderPath($project).$project->file_name.ProjectService::PROJ_EXT;
     }
 
     public function GetCurrentGFProjVersion()
@@ -42,7 +41,7 @@ class ProjectService
 
     private function GenerateNewGFProjContent() : string
     {
-        return "{\"version\":\"" . $this->projFileVersion . "\",\"graph\":{\"type\":0},\"assets\":[],\"elements\":[],\"components\":[],\"layers\":[]}";
+        return "{\"version\":\"" . $this->projFileVersion . "\",\"graph\":{\"type\":0},\"assets\":[],\"elements\":[],\"transformComponents\":[],\"layers\":[]}";
     }
 
     private function MakeUserFolder(int $userId) : void

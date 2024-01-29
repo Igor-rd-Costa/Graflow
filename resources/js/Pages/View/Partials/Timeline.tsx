@@ -1,12 +1,12 @@
+import TimelineContextMenu, { TimelineContextMenuCallbacks } from "@/Components/View/Timeline/ContextMenus/TimelineContextMenu";
+import TimelineElementContextMenu, { ElementContextMenuCallbacks } from "@/Components/View/Timeline/ContextMenus/TimelineElementContextMenu";
 import EmptyTimelineLayer from "@/Components/View/Timeline/EmptyTimelineLayer";
 import TimeRuler from "@/Components/View/Timeline/TimeRuler";
 import TimelineDivisions from "@/Components/View/Timeline/TimelineDivisions";
-import TimelineElement from "@/Components/View/Timeline/TimelineElement";
 import TimelineLayer from "@/Components/View/Timeline/TimelineLayer";
 import ElementService from "@/Services/ElementService";
-import GlobalEventsService from "@/Services/GlobalEventsService";
 import ProjectService from "@/Services/ProjectService";
-import { Graflow } from "@/types/GraflowTypes";
+import { GfLayer } from "@/Types/Graflow/Element";
 import { useEffect, useState } from "react";
 
 export type TimelineState = {
@@ -15,18 +15,85 @@ export type TimelineState = {
     divisions: number
 }
 
-export type TimelineProps = {
+enum ContextMenuKind {
+    CONTEXT_MENU, ELEMENT_CONTEXT_MENU
+}
+
+type ContextMenuInfo = {
+    id: string,
+    kind: ContextMenuKind,
+    open: boolean,
+    x: number,
+    y: number
+}
+
+type TimelineProps = {
     isLoaded : boolean
 }
-let loaded = false; 
-export default function Timeline( { isLoaded } : TimelineProps  ) {
+
+let loaded = false;
+export default function Timeline({ isLoaded } : TimelineProps) {
     const [ rulerState, SetRulerState ] = useState<TimelineState>({start: 0, end: 300, divisions: 15});
     const [layers, SetLayers ] = useState<JSX.Element[]>([<EmptyTimelineLayer key={0}></EmptyTimelineLayer>]);
+    const [ contextMenuInfo, SetContextMenuInfo ] = useState<ContextMenuInfo>({id: '', kind: ContextMenuKind.CONTEXT_MENU, open: false, x: 0, y: 0});
     let selectedElement : Element | null = null;
     let zoomLevel = 1.0;
     let zoomIncrement = 0.1;
     let prevWidth = 0;
     let rulerWidth = 0;
+
+    const timelineContextMenuCallbacks : TimelineContextMenuCallbacks = {
+        onNewElement: OnCreateElement
+    }
+
+    const elementContextMenuCallbacks : ElementContextMenuCallbacks = {
+        onDelete: () => {}
+    }
+
+    async function OnCreateElement() {
+        let layerId = contextMenuInfo.id;
+        if (layerId === "Empty") {
+            layerId = await ProjectService.CreateLayer();
+        }
+        await ProjectService.AddElementToLayer(layerId);
+        const layers = ProjectService.GetLayers();
+        SetContextMenuInfo({id: '', kind: contextMenuInfo.kind, open: false, x: 0, y: 0});
+        SetLayers(RenderLayers(layers));
+    }
+
+    async function OnGlobalMouseDown(event : MouseEvent) {
+        if (event.target === null)
+        return;
+
+        const target = event.target as HTMLElement;
+
+        if (target.closest("#timeline-context-menu"))
+            return;
+
+        if (contextMenuInfo.open === false)
+            return;
+
+        if (target.closest('#timeline-rows')) {
+            if (event.button !== 2) {
+                const row = target.closest('#timeline-row');
+                if (row === null)
+                    return;
+                const layerId = row.getAttribute("data-layerid");
+                if (layerId === null)
+                    return;
+
+                SetContextMenuInfo({id: layerId, kind: contextMenuInfo.kind, open: false, x: 0, y: 0});
+            }
+            return;
+        }
+        SetContextMenuInfo({id: '', kind: contextMenuInfo.kind, open: false, x: 0, y: 0});
+    }
+
+    useEffect(() => {
+        document.addEventListener('mousedown', OnGlobalMouseDown);
+
+        return () => {document.removeEventListener('mousedown', OnGlobalMouseDown)};
+    })
 
     function HandleScroll(event : WheelEvent) {
         // down : + deltaY
@@ -119,11 +186,34 @@ export default function Timeline( { isLoaded } : TimelineProps  ) {
         timelineRows.style.width = `${rulerWidth * zoomLevel}px`;
     }
 
-    const OnMouseDown = (event : MouseEvent) => {
+    function OnMouseUp(event : React.MouseEvent) {
+        if (event.button !== 2 || event.ctrlKey)
+            return;
+
+        const target = event.target as HTMLElement;
+        if (target.closest('.timeline-element')) {
+            SetContextMenuInfo({id: '', kind: ContextMenuKind.ELEMENT_CONTEXT_MENU, open: true, x: event.pageX, y: event.pageY});
+            return;
+        }
+        
+        const layer = target.closest("#timeline-row");
+        if (layer === null)
+            return;
+        const layerId = layer.getAttribute('data-layerid');
+        if (layerId === null)
+            return;
+        SetContextMenuInfo({id: layerId, kind: ContextMenuKind.CONTEXT_MENU, open: true, x: event.pageX, y: event.pageY});
+    }
+
+    function OnMouseDown(event : MouseEvent) {
         const target = event.target as HTMLElement | null;
         if (target === null)
             return;
-        
+
+        if (target.closest("#timeline-context-menu")) {
+            return;
+        }
+
         const element = target.closest('.timeline-element');
         if (selectedElement !== null) {
             selectedElement.classList.remove('timeline-element-selected');
@@ -132,11 +222,13 @@ export default function Timeline( { isLoaded } : TimelineProps  ) {
             selectedElement = element;
             selectedElement.classList.add('timeline-element-selected');
         } else {
-            selectedElement = null;
-            ElementService.SetSelectedElement(null);
+            if (selectedElement) {
+                selectedElement = null;
+                ElementService.SetSelectedElement(null);
+            }
             return;
         }
-
+        
         const uuid = selectedElement.getAttribute('data-uuid');
         ElementService.SetSelectedElement(uuid);
     }
@@ -165,7 +257,7 @@ export default function Timeline( { isLoaded } : TimelineProps  ) {
         }
     }, [isLoaded]);
 
-    function RenderLayers(layers : Graflow.Layer[]) {
+    function RenderLayers(layers : GfLayer[]) {
 
         if (layers.length === 0) {
             return [<EmptyTimelineLayer key={0}></EmptyTimelineLayer>];
@@ -178,14 +270,33 @@ export default function Timeline( { isLoaded } : TimelineProps  ) {
         return layerElements;
     }
 
+    function ShowContextMenu() {
+        switch(contextMenuInfo.kind) {
+            case ContextMenuKind.CONTEXT_MENU: {
+                return <TimelineContextMenu layerId={contextMenuInfo.id} x={contextMenuInfo.x} y={contextMenuInfo.y} callbacks={timelineContextMenuCallbacks}></TimelineContextMenu>
+            }
+            case ContextMenuKind.ELEMENT_CONTEXT_MENU: {
+                return <TimelineElementContextMenu x={contextMenuInfo.x} y={contextMenuInfo.y} callbacks={elementContextMenuCallbacks}></TimelineElementContextMenu>
+            }
+        }
+    }
+
+    function OnContextMenu(event: React.MouseEvent) {
+        if (!event.ctrlKey){
+            event.preventDefault();
+        }
+    }
+
     return (
+        <>
+        {contextMenuInfo.open && ShowContextMenu()}
         <section id="timeline" className='border min-h-[5rem] w-full h-full bg-gray-200 border-gray-500 rounded col-start-2 overflow-hidden'>
             <div id="timeline-wrapper" className="h-full relative overflow-scroll">
                 <TimeRuler start={rulerState.start} end={rulerState.end} divisions={rulerState.divisions}/>
                 <TimelineDivisions start={rulerState.start} end={rulerState.end} divisions={rulerState.divisions}/>
-                <div id="timeline-rows" onDragOver={(event)=>{event.preventDefault()}} onDrop={HandleDrop} 
+                <div id="timeline-rows" onMouseUp={OnMouseUp} onContextMenu={OnContextMenu} onDragOver={(e)=>{e.preventDefault()}} onDrop={HandleDrop} 
                 style={{width: `${rulerWidth}px`, gridTemplateRows: `repeat(${1 + layers.length}, 5rem) auto`}} 
-                    className="grid min-w-full min-h-[calc(100%-2rem)] absolute top-8">
+                className="grid min-w-full min-h-[calc(100%-2rem)] absolute top-8">
                         <EmptyTimelineLayer></EmptyTimelineLayer>
                         {layers}
                     <div className="h-[0.8rem] bg-white">
@@ -193,5 +304,6 @@ export default function Timeline( { isLoaded } : TimelineProps  ) {
                 </div>
             </div>
         </section>
+        </>
     )
 }

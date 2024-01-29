@@ -1,88 +1,95 @@
-import Vec3 from "@/Engine/Math/Vec3";
 import { Project } from "@/Pages/Projects/Index";
-import { Graflow } from "@/types/GraflowTypes";
+import { GfComponent, GfComponentType, GfTransformComponent } from "@/Types/Graflow/Compoments";
+import { GfElement, GfLayer } from "@/Types/Graflow/Element";
+import { GfGraph, GfGraphType, GfProjectFile } from "@/Types/Graflow/Project";
 import axios from "axios";
 
 export type AssetFile = { name: string, extension: string, hash : string, type: 'file' }
 export type AssetFolder = { name: string, type: 'folder', items: (AssetFile |AssetFolder)[] };
 export type Asset = AssetFile  | AssetFolder
-export enum GraphType {
-    GRAPH_2D
-}
-export type Graph = {
-    type: GraphType
-}
-
-export type ProjectFile = {
-    version: string,
-    graph: Graph,
-    elements: Graflow.FileElement[];
-    components: string[];
-    assets: Asset[],
-    layers: Graflow.Layer[]
-}
 
 export default class ProjectService
 {
-    private static id : number = -1;
-    private static graph : Graph;
-    private static name : string = "";
-    private static assets : Asset[] = [];
-    private static elements : Graflow.Element[] = [];
-    private static components : string[] // TODO change type;
-    private static layers : Graflow.Layer[] = [];
+    private static projId : number = -1;
+    private static projName : string = "";
+    private static project : GfProjectFile = {
+        version: '0.0.0',
+        graph: {type: GfGraphType.GRAPH_2D},
+        elements: [],
+        assets: [],
+        layers: [],
+        transformComponents: [],
+    };
+
 
     public static GetId() {
-        return this.id;
+        return this.projId;
     }
     
     public static GetAssets() {
-        return this.assets;
+        return this.project.assets;
     }
 
     public static GetLayers() {
-        return this.layers;
+        return this.project.layers;
     }
 
     public static GetName() {
-        return this.name;
+        return this.projName;
     }
 
     public static GetElements() {
-        return this.elements;
+        return this.project.elements;
     }
 
     public static GetElement(elementUuid : string) {
-        for (let i = 0; i < this.elements.length; i++) {
-            if (this.elements[i].uuid === elementUuid) {
-                return this.elements[i];
+        for (let i = 0; i < this.project.elements.length; i++) {
+            if (this.project.elements[i].uuid === elementUuid) {
+                return this.project.elements[i];
             }
         }
         return null;
     }
 
+    public static GetTransformComponents() {
+        return this.project.transformComponents;
+    }
+
+    public static ShowTransform() {
+        console.log(this.project.transformComponents);
+    }
+
+    public static FindComponent(component : GfComponent) {
+        switch(component.type) {
+            case GfComponentType.TRANSFORM_COMPONENT: {
+                let comp : GfTransformComponent | null = null;
+                for (let i = 0; i < this.project.transformComponents.length; i++) {
+                    if (this.project.transformComponents[i].uuid === component.uuid) {
+                        comp = this.project.transformComponents[i];
+                        break;
+                    }
+                }
+                return comp;
+            }
+            default: {
+                console.error("FindComponent unimplemented type " + component.type);
+                return null;
+            }
+        }
+    }
+
     public static async LoadProject(project : Project) {
-        this.name = project.name;
-        this.id = project.id;
-        const projFile = (await axios.get(route('project.file', {id: this.id}))).data as ProjectFile;
-        this.graph = projFile.graph;
-        this.assets = projFile.assets;
-        this.layers = projFile.layers;
-        this.elements = projFile.elements.map((element) => {
-            return {
-                start: element.start,
-                duration: element.duration,
-                position: new Vec3(element.position.x, element.position.y, element.position.z),
-                components: element.components,
-                uuid: element.uuid
-            };
-        });
-        this.components = projFile.components;
+        this.projName = project.name;
+        this.projId = project.id;
+        const projFile = (await axios.get(route('project.file', {id: this.projId}))).data as GfProjectFile;
+        console.log(projFile);
+        this.project = projFile;
+        return projFile;
     }
 
     public static async CreateFolder(path : string) {
-        const result  = await axios.post(route('assets.folder.store'), { body: {id: this.id, path: path }});
-        let assets = this.assets;
+        const result  = await axios.post(route('assets.folder.store'), { body: {id: this.projId, path: path }});
+        let assets = this.project.assets;
         if (result.data !== 0) {
             if (path.length !== 0) {
                 const pathArray = path.split('/');
@@ -99,13 +106,13 @@ export default class ProjectService
     }
 
     public static async DeleteFolder(path : string) {
-        const result = (await axios.delete(route('assets.folder.destroy'), {data: {path: path, id: this.id}})).data;
+        const result = (await axios.delete(route('assets.folder.destroy'), {data: {path: path, id: this.projId}})).data;
         if (result === false) {
             console.error('Failed to delete folder at path %s', path);
             return;
         }
         
-        let assets = this.assets;
+        let assets = this.project.assets;
         const pathArray = path.split('/');
         let folder = pathArray[0];
         if (pathArray.length > 0) {
@@ -131,12 +138,12 @@ export default class ProjectService
 
     public static async ImportAsset(path : string, file : File) {
         const formData = new FormData();
-        formData.append('id', this.id.toString());
+        formData.append('id', this.projId.toString());
         formData.append('path', path);
         formData.append('data', file);
         const result = (await axios.post<AssetFile | null>(route('assets.store'), formData)).data;
         if (result !== null) {
-            let assets = this.assets;
+            let assets = this.project.assets;
             const pathArray = path.split('/');
             if (pathArray.length > 0) {
                 for (let i = 0; i < pathArray.length; i++) {
@@ -158,9 +165,9 @@ export default class ProjectService
     }
 
     public static async DeleteAsset(hash : string, path : string) {
-        const result = (await axios.delete<boolean>(route('assets.destroy'), {data: {id: this.id, hash: hash, path: path }})).data;
+        const result = (await axios.delete<boolean>(route('assets.destroy'), {data: {id: this.projId, hash: hash, path: path }})).data;
         if (result) {
-            let assets = this.assets;
+            let assets = this.project.assets;
             const pathArray = path.split('/');
             if (pathArray.length > 0) {
                 for (let i = 0; i < pathArray.length; i++) {
@@ -185,33 +192,31 @@ export default class ProjectService
     }
 
     public static async CreateLayer() {
-        const layerId = (await axios.post<string>(route('layer.store'), {id: this.id})).data;
-        const layer : Graflow.Layer = {id: layerId, elements: []};
-        this.layers.unshift(layer);
+        const layerId = (await axios.post<string>(route('layer.store'), {id: this.projId})).data;
+        const layer : GfLayer = {id: layerId, elements: []};
+        this.project.layers.unshift(layer);
         return layerId;
     }
 
     public static async AddElementToLayer(layerId : string) {
-        const element = (await axios.post<Graflow.Element|null>(route('element.store'), {id: this.id, layerId: layerId})).data;
+        const element = (await axios.post<GfElement|null>(route('element.store'), {id: this.projId, layerId: layerId})).data;
         if (element === null)
             return;
 
-        const pos = (element.position as unknown) as {x: number, y: number, z: number};
-        element.position = new Vec3(pos.x, pos.y, pos.x);
-        for (let i = 0; i < this.layers.length; i++) {
-            if (this.layers[i].id === layerId) {
-                this.layers[i].elements.push(element.uuid);
+        for (let i = 0; i < this.project.layers.length; i++) {
+            if (this.project.layers[i].id === layerId) {
+                this.project.layers[i].elements.push(element.uuid);
                 break;
             }
         }
-        this.elements.push(element);
+        this.project.elements.push(element);
     }
 
     public static async ResetLayers() {
-        await axios.delete(route('layer.reset'), {data: {id: this.id}});
+        await axios.delete(route('layer.reset'), {data: {id: this.projId}});
     }
 
     public static async ResetAssets() {
-        await axios.delete(route('assets.reset'), {data: {id: this.id}});
+        await axios.delete(route('assets.reset'), {data: {id: this.projId}});
     }
 }

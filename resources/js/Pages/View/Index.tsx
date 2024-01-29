@@ -1,16 +1,17 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { User } from '@/types';
+import { User } from '@/Types';
 import { Head } from '@inertiajs/react';
 import { Project } from '../Projects/Index';
 import AssetExplorer from './Partials/AssetExplorer';
-import ProjectService, { ProjectFile } from '@/Services/ProjectService';
+import ProjectService from '@/Services/ProjectService';
 import { useEffect, useState } from 'react';
 import ViewPort from './Partials/Viewport';
 import Timeline from './Partials/Timeline';
 import PrimaryButton from '@/Components/PrimaryButton';
 import PropertiesPanel from './Partials/PropertiesPanel';
-import ElementService from '@/Services/ElementService';
 import GlobalEventsService from '@/Services/GlobalEventsService';
+import axios from 'axios';
+import { GfProjectFile } from '@/Types/Graflow/Project';
 
 type ViewProps = {
     project: Project,
@@ -20,7 +21,7 @@ type ViewProps = {
 export type ProjectInfo = {
     id: number,
     name: string,
-    file: ProjectFile
+    file: GfProjectFile
 }
 
 export default function Index({project, auth } : ViewProps) {
@@ -47,6 +48,10 @@ export default function Index({project, auth } : ViewProps) {
         ProjectService.ResetAssets();
     }
 
+    function TestTest() {
+        axios.post(route('test'));
+    }
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -66,6 +71,8 @@ export default function Index({project, auth } : ViewProps) {
                     <PrimaryButton onClick={ResetLayers}>Reset Layers</PrimaryButton>
                     <br></br>
                     <PrimaryButton className='mt-2' onClick={ResetAssets}>Reset Assets</PrimaryButton>
+                    <br></br>
+                    <PrimaryButton className='mt-2' onClick={TestTest}>Test</PrimaryButton>
                 </div>
             </section>
         </AuthenticatedLayout>)

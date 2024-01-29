@@ -1,8 +1,6 @@
 import Engine from "@/Engine/Engine";
 import Input from "@/Engine/Input";
-import Vec3 from "@/Engine/Math/Vec3";
-import Renderer from "@/Engine/Renderer/Renderer";
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 
 type ViewportSize = {
     width: number,

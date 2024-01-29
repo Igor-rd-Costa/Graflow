@@ -12,7 +12,9 @@ import Camera from "../Cameras/Camera";
 import Vec3 from "../Math/Vec3";
 import { ViewportSize } from "../Types/Types";
 import ProjectService from "@/Services/ProjectService";
-import { Graflow } from "@/types/GraflowTypes";
+import { GfElement } from "@/Types/Graflow/Element";
+import { GfComponentType } from "@/Types/Graflow/Compoments";
+import ComponentService from "@/Services/ComponentService";
 
 export default class Renderer {
     private static gl : WebGL2RenderingContext;
@@ -149,14 +151,22 @@ export default class Renderer {
             }
         }
         this.model = GFMath.Rotate(new Mat4, this.objAngle, new Vec3(1.0, 0.0, 0.0));
-        this.transformsUB.WriteUniform('viewProj', viewProj.value);
+        this.transformsUB.WriteUniform('viewProj', viewProj);
         
         // TODO:
         // Dynamic position
         const elements = Renderer.GenerateFrameData(0);
+        this.model = new Mat4;
         elements.forEach((element) => {
-            this.model = GFMath.Translate(new Mat4, element.position);
-            this.transformsUB.WriteUniform('model', this.model.value);
+            element.components.forEach(component => {
+                if (component.type === GfComponentType.TRANSFORM_COMPONENT) {
+                    const comp = ComponentService.GetTranformComponent(component.uuid);
+                    if (comp !== null) {
+                        this.model = GFMath.Translate(new Mat4, comp.position);
+                    }
+                }
+            })
+            this.transformsUB.WriteUniform('model', this.model);
 
             this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0);
         })
@@ -177,7 +187,7 @@ export default class Renderer {
     private static GenerateFrameData(position : number) {
         const layers = ProjectService.GetLayers();
         const elements = ProjectService.GetElements();
-        const renderedElements : Graflow.Element[] = [];
+        const renderedElements : GfElement[] = [];
         layers.forEach((layer) => {
             if (layer.elements.length === 0)
                 return;

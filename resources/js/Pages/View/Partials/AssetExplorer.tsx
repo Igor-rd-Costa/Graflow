@@ -21,13 +21,14 @@ type AssetExplorerProps = {
     isLoaded: boolean
 }
 
-let loaded = false;
 let selectedItem : HTMLElement | null = null;
+let loaded = false;
 export default function AssetExplorer({ isLoaded } : AssetExplorerProps) {
     const [ contextMenuInfo, SetContextMenuInfo ] = useState<ContextMenuInfo>({kind: ContextMenuKind.CONTEXT_MENU, open: false, x: 0, y: 0});
     const [ path, SetPath ] = useState<string>('');
     const [ assets, SetAssets ] = useState<JSX.Element[]>([]);
     const [ showAssetImportForm, SetShowAssetImportForm ] = useState(false);
+
     const contextMenuCallBacks : ContextMenuCallbacks = {
         onCreateFolder: CreateFolder,
         onImportAsset: OpenAssetImportForm
@@ -76,9 +77,9 @@ export default function AssetExplorer({ isLoaded } : AssetExplorerProps) {
         }
     }
 
-    function HandleMouseDown(event : React.MouseEvent) {
+    function HandleMouseUp(event : React.MouseEvent) {
+        const target = event.target as HTMLElement;
         if (event.button === 0) {
-            const target = event.target as HTMLElement;
             let item = target.closest('#asset-file') as HTMLElement | null;
             if (item === null) {
                 item = target.closest('#asset-folder') as HTMLElement | null;
@@ -92,7 +93,6 @@ export default function AssetExplorer({ isLoaded } : AssetExplorerProps) {
             SelectItem(item);
 
         } else if (event.button === 2) {
-            const target = event.target as HTMLElement;
             let assetItem = target.closest('#asset-file');
             if (assetItem !== null) {
                 SelectItem(assetItem as HTMLElement);
@@ -263,8 +263,8 @@ export default function AssetExplorer({ isLoaded } : AssetExplorerProps) {
                     </div>
                 </div>
                 <div id='asset-manager-item-wrapper' className="flex flex-wrap content-start gap-6 p-4 h-[calc(100%-25px-21px)] overflow-y-scroll overflow-x-hidden"
-                onDoubleClick={HandleDoubleClick} onMouseDown={HandleMouseDown} onContextMenu={BlockContextMenu}>
-                    {isLoaded && assets}    
+                onDoubleClick={HandleDoubleClick} onMouseUp={HandleMouseUp} onContextMenu={BlockContextMenu}>
+                    {assets}    
                 </div>
             </div>
         </section>

@@ -1,19 +1,18 @@
-import { Graflow } from "@/types/GraflowTypes";
 import ProjectService from "./ProjectService";
-import { connected } from "process";
 import axios from "axios";
-import Vec3 from "@/Engine/Math/Vec3";
+import { GfElement, GfTransformComponentField } from "@/Types/Graflow/Element";
+import { GfComponentType } from "@/Types/Graflow/Compoments";
 
 
-export type SelectionChangeCallback = (element : Graflow.Element | null) => void;
+export type SelectionChangeCallback = (element : GfElement | null) => void;
 
 export default class ElementService 
 {
-    private static selectedElement : Graflow.Element | null = null;
+    private static selectedElement : GfElement | null = null;
     private static selectionChangeListeners : SelectionChangeCallback[] = [];
 
     public static SetSelectedElement(uuid : string | null) : void {
-        let element : Graflow.Element | null = null;
+        let element : GfElement | null = null;
         if (uuid === null) {
             this.selectedElement = null;
         } else {
@@ -23,7 +22,7 @@ export default class ElementService
         this.selectionChangeListeners.forEach(listener => listener(element));
     }
 
-    public static GetSelectedElement() : Graflow.Element | null {
+    public static GetSelectedElement() : GfElement | null {
         return this.selectedElement;
     }
 
@@ -32,27 +31,17 @@ export default class ElementService
             this.selectionChangeListeners.push(callback);
     }
 
-    public static async UpdateComponent(type : Graflow.ComponentType, field : Graflow.TransformComponentField, data : any) {
+    public static async AddComponent(type : GfComponentType) {
         if (this.selectedElement === null)
-            return false;
-        const result = (await axios.patch<boolean>(
-            route('component.update'), {
-                id: ProjectService.GetId(), 
-                element: this.selectedElement.uuid, 
-                type: type, 
-                field: field, 
-                value: data 
-            }
-        )).data;
+            return;
 
-        if (result) {
-            const elements =ProjectService.GetElements();
-            for (let i = 0; i < elements.length; i++) {
-                if (elements[i].uuid === this.selectedElement.uuid) {
-                    elements[i].position = new Vec3(data[0], data[1], data[2]);
-                }
+        this.selectedElement.components.forEach(component => {
+            if (component.type === type) {
+                console.warn("Selected element already has a component of this type.");
+                return;
             }
-        }
-        return result;
+        })
+
+        const result = await axios.post(route('component.store'), {projId: ProjectService.GetId(), elementId: this.selectedElement.uuid, type});
     }
 }

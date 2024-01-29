@@ -47,7 +47,7 @@ class TimelineController extends Controller
         $projFile = json_decode(Storage::disk('local')->get($projFilePath));
         $layers = &$projFile->layers;
         $foundLayer = false;
-        $element = new Element(0, 30, new Vec3(0.0, 0.0, 0.0));
+        $element = new Element(0, 30);
         foreach ($layers as &$layer) 
         {
             if ($layer->id === $request->input('layerId'))
@@ -78,36 +78,7 @@ class TimelineController extends Controller
         $projFile = json_decode(Storage::disk('local')->get($projFilePath));
         $projFile->layers = [];
         $projFile->elements = [];
-        $projFile->components = [];
+        $projFile->transformComponents = [];
         Storage::disk('local')->put($projFilePath, json_encode($projFile));
     }
-
-    //update component of element
-    //TODO Refactor
-    public function ComponentUpdate(Request $request)
-    {
-        $user = Auth::user();
-        $id = $request->input('id');
-        $elementUuid = $request->input('element');
-        $componentType = $request->input('type');
-        $componentField = $request->input('field');
-        $newValue = $request->input('value');
-        
-        $project = Project::with('user:id')->where("user_id", $user->id)->find($id);
-        $projFilePath = $this->projectService->FilePath($project);
-        $projFile = json_decode(Storage::disk('local')->get($projFilePath));
-        $elements = &$projFile->elements;
-        if ($componentType === 0 && $componentField === 0) 
-        {
-            for ($i = 0; $i < count($elements); $i++) {
-                if ($elements[$i]->uuid === $elementUuid) {
-                    $elements[$i]->position = new Vec3($newValue[0], $newValue[1], $newValue[2]);
-                }
-            } 
-            Storage::disk('local')->put($projFilePath, json_encode($projFile));
-            return Response(true);
-        }
-        return Response(false);
-    }
-
 }

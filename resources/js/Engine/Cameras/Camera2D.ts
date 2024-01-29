@@ -18,9 +18,9 @@ export default class Camera2D extends CameraBase {
         this.view = new Mat4();
         //TODO add support for CameraMovementMode.MOUSE_MOVEMENT_MODE 
         this.movementMode = CameraMovementMode.KEYBOARD_MOVEMENT_MODE;
-        this.view.value[12] = this.position.value[0];
-        this.view.value[13] = this.position.value[1];
-        this.view.value[14] = this.position.value[2];
+        this.view[12] = this.position[0];
+        this.view[13] = this.position[1];
+        this.view[14] = this.position[2];
     }
 
     public Update(delta : number) {
@@ -40,9 +40,9 @@ export default class Camera2D extends CameraBase {
             }
         }
 
-        this.view.value[12] = this.position.value[0];
-        this.view.value[13] = this.position.value[1];
-        this.view.value[14] = this.position.value[2];
+        this.view[12] = this.position[0];
+        this.view[13] = this.position[1];
+        this.view[14] = this.position[2];
     }
 
     public View() {

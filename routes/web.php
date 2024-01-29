@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\ComponentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TimelineController;
@@ -62,6 +63,7 @@ Route::get('/view/{uuid?}', function(?string $uuid = null)
 
 //Projects routes
 Route::get('projects', [ProjectController::class, 'Projects'])->middleware(['auth', 'verified'])->name('projects.index');
+Route::post('test', [ProjectController::class, 'Test'])->middleware(['auth', 'verified'])->name('test');
 Route::get('project/{uuid}', [ProjectController::class, 'Project'])->middleware(['auth', 'verified'])->name('project.index');
 Route::get('project/file/{id}', [ProjectController::class, 'File'])->middleware(['auth', 'verified'])->name('project.file');
 Route::post('project', [ProjectController::class, 'Store'])->middleware(['auth', 'verified'])->name('project.store');
@@ -82,7 +84,12 @@ Route::delete('assets/reset', [AssetController::class, 'Reset'])->middleware(['a
 Route::post('layer', [TimelineController::class, 'Store'])->middleware(['auth', 'verified'])->name('layer.store');
 Route::post('element', [TimelineController::class, 'ElementStore'])->middleware(['auth', 'verified'])->name('element.store');
 Route::delete('layer/reset', [TimelineController::class, 'Reset'])->middleware(['auth', 'verified'])->name('layer.reset');
-Route::patch('component', [TimelineController::class, 'ComponentUpdate'])->middleware(['auth', 'verified'])->name('component.update');
+
+//
+
+//Component routes
+Route::post('component', [ComponentController::class, 'Store'])->middleware(['auth', 'verified'])->name('component.store');
+Route::patch('component', [ComponentController::class, 'Update'])->middleware(['auth', 'verified'])->name('component.update');
 
 //
 
