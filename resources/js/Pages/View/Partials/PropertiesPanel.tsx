@@ -1,6 +1,7 @@
 import TransformComponent from "@/Components/View/PropertiesPanel/Components/TransformComponent";
 import PropertiesPanelContextMenu from "@/Components/View/PropertiesPanel/ContextMenus/PropertiesPanelContextMenu";
 import PropertiesPanelListItem from "@/Components/View/PropertiesPanel/ContextMenus/PropertiesPanelListItem";
+import ComponentService from "@/Services/ComponentService";
 import ElementService from "@/Services/ElementService"
 import ProjectService from "@/Services/ProjectService";
 import { GfComponentType } from "@/Types/Graflow/Compoments";
@@ -11,7 +12,6 @@ import { useEffect, useState } from "react";
 type Properties = {
     name: string,
     uuid: string,
-    components : JSX.Element[];
 }
 
 enum ContextMenuKind {
@@ -27,10 +27,19 @@ type ContextMenuInfo = {
 
 export default function PropertiesPanel() {
     const [ properties, SetProperties ] = useState<Properties | null>(null);
+    const [ components, SetComponents ] = useState<JSX.Element[]>([]);
     const [ contextMenuInfo, SetContextMenuInfo ] = useState<ContextMenuInfo>({kind: ContextMenuKind.CONTEXT_MENU, open: false, x: 0, y: 0});
-    async function AddTransformComponent() {
-        await ElementService.AddComponent(GfComponentType.TRANSFORM_COMPONENT);
 
+    async function AddTransformComponent() {
+        const result = await ComponentService.AddComponent(GfComponentType.TRANSFORM_COMPONENT);
+        if (result !== false) {
+            let comps : JSX.Element[] = [];
+            components.forEach(component => {
+                comps.push(component);
+            });
+            comps.push(<TransformComponent key={components.length} id={result.uuid} transforms={{position: result.position, rotation: result.rotation, scale: result.scale}}></TransformComponent>)
+            SetComponents(comps);
+        }
         SetContextMenuInfo({kind: contextMenuInfo.kind, open: false, x: 0, y: 0});
     }
 
@@ -47,19 +56,13 @@ export default function PropertiesPanel() {
     function OnElementSelectionChange(element : GfElement | null) {
         let prop : Properties | null = null;
         if (element === null) {
+            SetComponents([]);
             SetProperties(prop);
             return;
         }
-        prop = {name: "New Element", uuid: element.uuid, components: []};
-        const ele = ProjectService.GetElement(prop.uuid);
-        if (ele === null) {
-            prop.components = [];
-            SetProperties(prop);
-            return;
-        }
-
+        prop = {name: "New Element", uuid: element.uuid };
         let comps : JSX.Element[] = [];
-        ele.components.forEach((component, index) => {
+        element.components.forEach((component, index) => {
             const comp = ProjectService.FindComponent(component);
             if (comp !== null) {
                 switch(comp.type) {
@@ -69,7 +72,7 @@ export default function PropertiesPanel() {
                 }
             }
         })
-        prop.components = comps;
+        SetComponents(comps);
         SetProperties(prop);
     }
     
@@ -126,7 +129,7 @@ export default function PropertiesPanel() {
                         <span className="pl-1">{properties.name}</span>
                     </div>
                 </div>
-                {properties.components}
+                {components}
             </>
              }
             </div>

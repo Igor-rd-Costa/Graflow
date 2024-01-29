@@ -1,7 +1,8 @@
-import { GfTransformComponent } from "@/Types/Graflow/Compoments";
+import { GfComponentType, GfTransformComponent } from "@/Types/Graflow/Compoments";
 import ProjectService from "./ProjectService";
 import axios from "axios";
 import { GfTransformComponentField } from "@/Types/Graflow/Element";
+import ElementService from "./ElementService";
 
 
 
@@ -18,6 +19,27 @@ export default class ComponentService {
             }
         }
         return comp;
+    }
+
+    public static async AddComponent(type : GfComponentType) {
+        const selectedElement = ElementService.GetSelectedElement();
+        if (selectedElement === null)
+            return false;
+
+        selectedElement.components.forEach(component => {
+            if (component.type === type) {
+                console.warn("Selected element already has a component of this type.");
+                return false;
+            }
+        })
+
+        const result = (await axios.post<GfTransformComponent|false>(route('component.store'), {projId: ProjectService.GetId(), elementId: selectedElement.uuid, type})).data;
+        if (result !== false) {
+            selectedElement.components.push({uuid: result.uuid, type: result.type});
+            ProjectService.GetTransformComponents().push(result);
+        }
+
+        return result;
     }
 
     public static async UpdateComponent(compId : string, field : GfTransformComponentField, newVal : any) {
