@@ -14,7 +14,7 @@ type TimelineElementProps = {
 export default function TimelineElement({ start, duration, maxDuration, uuid } : TimelineElementProps) {
     const elementRef = useRef(null);
     let cursorState : CursorState = CursorState.NORMAL;
-    let filename = "Filename.png";
+    let filename = "New Element"; // TODO custom names
 
     useEffect(() => {
         if (elementRef.current) {

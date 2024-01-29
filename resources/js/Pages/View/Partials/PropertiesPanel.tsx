@@ -119,7 +119,7 @@ export default function PropertiesPanel() {
             </PropertiesPanelContextMenu>}
             <section onMouseUp={OnMouseUp} onContextMenu={OnContextMenu} id="properties-panel" className="bg-gray-200 border border-gray-500 rounded row-span-2 w-[285px]">
             <div className="border-b bg-white rounded-t pl-2 h-[25px] border-gray-300 text-turquoise-500">Properties</div>
-            <div className="border-b border-gray-300 shadow">
+            <div className="shadow">
             {properties !== null &&
             <>
                 <div id="element-basic-info" className="pl-2 pt-2 bg-white grid grid-cols-[2.5rem_1fr] grid-rows-[1.25rem_1.25rem_1rem] text-sm">

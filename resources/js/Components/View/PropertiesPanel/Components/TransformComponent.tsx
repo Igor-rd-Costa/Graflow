@@ -3,7 +3,8 @@ import ComponentService from "@/Services/ComponentService";
 import ElementService from "@/Services/ElementService";
 import { GfComponentType } from "@/Types/Graflow/Compoments";
 import { GfTransformComponentField } from "@/Types/Graflow/Element";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import Vec3Input from "./Partials/Vec3Input";
 
 type Transforms = {
     position: Vec3,
@@ -17,40 +18,44 @@ type TransformComponentProps = {
 }
 
 export default function TransformComponent({ id, transforms } : TransformComponentProps) {
-    const transformPositionX = useRef(null);
-    const transformPositionY = useRef(null);
-    const transformPositionZ = useRef(null);
+    const [ isExpanded, SetIsExpanded ] = useState(true);
 
-    function HandleChange(event : React.ChangeEvent) {
-        const target = event.target as HTMLElement;
-        if (target.classList.contains('component-transform-position')) {
-            if (transformPositionX.current === null || transformPositionY.current === null || transformPositionZ.current === null) {
-                return;
-            }
-            const pos = new Vec3(
-                parseFloat((transformPositionX.current as HTMLInputElement).value),
-                parseFloat((transformPositionY.current as HTMLInputElement).value),
-                parseFloat((transformPositionZ.current as HTMLInputElement).value)
-            );
-            ComponentService.UpdateComponent(id, GfTransformComponentField.POSITION_FIELD, pos);
-        }
+    function HandlePositionChange(newVal : Vec3) {
+        if (newVal.Equals(transforms.position))
+            return;
+        ComponentService.UpdateComponent(id, GfTransformComponentField.POSITION_FIELD, newVal);
     }
 
-    return (
-        <div id="element-component" className="row-start-4 col-span-2 bg-white text-sm border-b border-t border-gray-300">
-            <div className="border-b border-gray-300 pl-2 text-turquoise-500 shadow select-none">Transform</div>
+    function HandleRotationChange(newVal : Vec3) {
+        if (newVal.Equals(transforms.rotation))
+            return;
+        ComponentService.UpdateComponent(id, GfTransformComponentField.ROTATION_FIELD, newVal);
+    }
 
-            <div className="grid grid-rows-[1.5rem] grid-cols-[1.7rem_repeat(3,auto_3.8rem)] p-2 pr-0 items-center">
-                <img className="w-[1.5rem] h-[1.5rem]"></img>
-                <label className="w-fit pl-1 pr-1 h-[1.2rem] text-turquoise-500">X:</label>
-                <input onChange={HandleChange} ref={transformPositionX} defaultValue={transforms.position[0]} id="transform-position-x" type="number"
-                className="component-transform-position w-[3.5rem] pl-1 p-0 h-[1.4rem] rounded text-sm focus:border-turquoise-500 focus:ring-turquoise-500"/>
-                <label className="w-fit pl-1 pr-1 h-[1.2rem] text-turquoise-500">Y:</label>
-                <input onChange={HandleChange} ref={transformPositionY} defaultValue={transforms.position[1]} id="transform-position-y" type="number"
-                className="component-transform-position w-[3.5rem] pl-1 p-0 h-[1.4rem] rounded text-sm focus:border-turquoise-500 focus:ring-turquoise-500"/>
-                <label className="w-fit pl-1 pr-1 h-[1.2rem] text-turquoise-500">Z:</label>
-                <input onChange={HandleChange} ref={transformPositionZ} defaultValue={transforms.position[2]} id="transform-position-z" type="number"
-                className="component-transform-position w-[3.5rem] pl-1 p-0 h-[1.4rem] rounded text-sm focus:border-turquoise-500 focus:ring-turquoise-500"/>
+    function HandleScaleChange(newVal : Vec3) {
+        if (newVal.Equals(transforms.scale))
+            return;
+        ComponentService.UpdateComponent(id, GfTransformComponentField.SCALE_FIELD, newVal);
+    }
+
+    function ToggleExpand() {
+        SetIsExpanded(!isExpanded);
+    }
+
+    let angle = isExpanded === true ? 0 : 90;
+    return (
+        <div id="element-component" className="row-start-4 col-span-2 bg-white text-sm border-t border-gray-300">
+            <div className="border-b border-gray-300 pl-2 text-turquoise-500 shadow select-none grid items-center grid-rows-1 grid-cols-[auto_1fr]">
+                <span>Transform</span> 
+                <svg className="justify-self-end mr-4 fill-turquoise-500 hover:fill-turquoise-200 cursor-pointer" 
+                    onClick={ToggleExpand} width={14} height={8} style={{rotate: `-${angle}deg`}}>
+                    <polygon points="0,0 13,0 6.5,7"/>
+                </svg>
+            </div>
+            <div hidden={!isExpanded}>
+                <Vec3Input step={0.1} imgSrc={''} imgTitle="Position" onChange={HandlePositionChange} defVal={transforms.position}/>
+                <Vec3Input step={1} imgSrc={''} imgTitle="Rotation" onChange={HandleRotationChange} defVal={transforms.rotation}/>
+                <Vec3Input step={0.1} imgSrc={''} imgTitle="Scale" onChange={HandleScaleChange} defVal={transforms.scale}/>
             </div>
         </div>
     )

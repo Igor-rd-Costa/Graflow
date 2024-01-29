@@ -123,8 +123,6 @@ export default class Renderer {
     private static startTime = 0;
     private static deltaTime = 0;
     private static model : Mat4 = new Mat4;
-    private static objPos : Vec3 = new Vec3;
-    private static objAngle : number = 0.0;
 
     private static Loop() {
         if (this.gl === null) {
@@ -139,22 +137,10 @@ export default class Renderer {
 
         const view = Camera.View();
         const viewProj = this.transforms.proj.Multiply(view);
-
-        if (Input.IsKeyDown(Key.KEY_ARROW_UP)) {
-            if (this.objAngle < 360) {
-                this.objAngle += 0.1;
-            }
-        }
-        else if (Input.IsKeyDown(Key.KEY_ARROW_DOWN)) {
-            if (this.objAngle > 0) {
-                this.objAngle -= 0.1;
-            }
-        }
-        this.model = GFMath.Rotate(new Mat4, this.objAngle, new Vec3(1.0, 0.0, 0.0));
         this.transformsUB.WriteUniform('viewProj', viewProj);
         
         // TODO:
-        // Dynamic position
+        // Dynamic frame
         const elements = Renderer.GenerateFrameData(0);
         this.model = new Mat4;
         elements.forEach((element) => {
@@ -162,7 +148,7 @@ export default class Renderer {
                 if (component.type === GfComponentType.TRANSFORM_COMPONENT) {
                     const comp = ComponentService.GetTranformComponent(component.uuid);
                     if (comp !== null) {
-                        this.model = GFMath.Translate(new Mat4, comp.position);
+                        this.model = GFMath.Scale(comp.scale).Multiply(GFMath.RotateZ(GFMath.Radians(comp.rotation[2]))).Multiply(GFMath.Translate(comp.position));
                     }
                 }
             })

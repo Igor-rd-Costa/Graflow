@@ -8,39 +8,53 @@ export namespace GFMath {
         return angle * ( Math.PI / 180);
     }
 
-    export function Translate(mat4 : Mat4, offset : Vec3) : Mat4 {
-        const newMat4 = mat4;
-        newMat4[12] += offset[0];
-        newMat4[13] += offset[1];
-        newMat4[14] += offset[2];
+    export function Translate(offset : Vec3) : Mat4 {
+        const m = new Mat4;
+        m[12] += offset[0];
+        m[13] += offset[1];
+        m[14] += offset[2];
         
-        return newMat4;
+        return m;
     }
 
-    export function Rotate(mat4 : Mat4, angle : number, axis : Vec3) : Mat4 {
-        const newMat4 = mat4;
-
+    export function RotateX(angle: number) {
+        const m = new Mat4;
         const a = angle;
         const c = Math.cos(a);
         const s = Math.sin(a);
 
-        //TODO add support for other  axys when adding 3D
-        //z axis
-        mat4[0] = c;
-        mat4[1] = s;
-        mat4[4] = -s;
-        mat4[5] = c;
-
-        return newMat4;
+        m[5] = c;
+        m[6] = s;
+        m[9] = -s;
+        m[10] = c;
+        return m;
     }
 
-    export function Scale(mat4 : Mat4, offset : Vec3) : Mat4 {
-        const newMat4 = mat4;
-        newMat4[0] *= offset[0];
-        newMat4[5] *= offset[1];
-        newMat4[10] *= offset[2];
+    export function RotateY(angle: number) {
         
-        return newMat4;
+    }
+
+    export function RotateZ(angle: number) {
+        const m = new Mat4;
+        const a = angle;
+        const c = Math.cos(a);
+        const s = Math.sin(a);
+
+        m[0] = c;
+        m[1] = s;
+        m[4] = -s;
+        m[5] = c;
+
+        return m;
+    }
+
+    export function Scale(offset : Vec3) : Mat4 {
+        const m = new Mat4;
+        m[0] *= offset[0];
+        m[5] *= offset[1];
+        m[10] *= offset[2];
+        
+        return m;
     }
 
     export function Ortho(left : number, right : number, top : number, bottom : number, near : number, far : number) {
